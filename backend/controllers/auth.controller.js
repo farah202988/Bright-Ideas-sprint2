@@ -1,9 +1,12 @@
 import { User } from "../models/user.model.js";
+//Cette import permet d'accéder à TOUTES les méthodes Mongoose
+//Sans cette ligne, le controller ne peut pas parler à MongoDB
 import bcryptjs from "bcryptjs";
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
 
 //SIGNUP 
 export const signup = async (req, res) => {
+  //recuperer les donnees
   const { name, alias, email, dateOfBirth, address, password, confirmPassword } = req.body;
 
   try {
@@ -11,7 +14,8 @@ export const signup = async (req, res) => {
     if (!name || !alias || !email || !dateOfBirth || !address || !password || !confirmPassword) {
       throw new Error("Tous les champs sont obligatoires");
     }
-     // Validation du format de l'email avec regex
+    
+    // Validation du format de l'email avec regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ 
@@ -36,6 +40,24 @@ export const signup = async (req, res) => {
       });
     }
 
+    // NOUVELLE VALIDATION : Vérifier que l'utilisateur a au moins 15 ans
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    // Ajuster l'âge si l'anniversaire n'est pas encore passé cette année
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    if (age < 15) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Vous devez avoir au moins 15 ans pour vous inscrire" 
+      });
+    }
+
     // Vérifier si l'email existe déjà
     const userAlreadyExists = await User.findOne({ email });
     if (userAlreadyExists) {
@@ -57,19 +79,15 @@ export const signup = async (req, res) => {
     // Hasher le mot de passe
     const hashedPassword = await bcryptjs.hash(password, 10);
 
-    // Générer un token de vérification
-    const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Créer le nouvel utilisateur
-    const user = new User({
+    const user = new User({//creation dune instance dans le memoire
       name,
       alias,
       email,
       dateOfBirth,
       address,
-      password: hashedPassword,
-      verificationToken,
-      verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24h
+      password: hashedPassword
     });
 
     await user.save();
@@ -114,16 +132,22 @@ export const login = async (req, res) => {
       });
     }
 
-    // Vérifier si l'utilisateur existe
+    // ✅ AMÉLIORATION : Vérifier si l'utilisateur existe
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ success: false, message: "Utilisateur non trouvé" });
+      return res.status(404).json({ 
+        success: false, 
+        message: "Utilisateur non trouvé" 
+      });
     }
 
-    // Vérifier le mot de passe
+    // ✅ AMÉLIORATION : Vérifier le mot de passe séparément
     const isPasswordValid = await bcryptjs.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ success: false, message: "Identifiants invalides" });
+      return res.status(401).json({ 
+        success: false, 
+        message: "Mot de passe incorrect" 
+      });
     }
 
     // Mettre à jour lastLogin
@@ -145,7 +169,8 @@ export const login = async (req, res) => {
         address: user.address,
         role: user.role,
         isVerified: user.isVerified,
-        lastLogin: user.lastLogin
+        lastLogin: user.lastLogin,
+        profilePhoto: user.profilePhoto  
       }
     });
   } catch (error) {
@@ -155,18 +180,17 @@ export const login = async (req, res) => {
 
 // LOGOUT
 export const logout = (req, res) => {
-  res.clearCookie("token"); // Supprime le cookie JWT
+  res.clearCookie("token");
   res.status(200).json({ success: true, message: "Déconnexion réussie" });
 };
 
 // UPDATE PROFILE
 export const updateProfile = async (req, res) => {
   try {
-    // DEBUG: Afficher ce qui arrive du serveur
     console.log('req.body:', req.body);
     console.log('req.user:', req.user);
 
-    const userId = req.user._id; // Récupéré du JWT via middleware auth
+    const userId = req.user._id;
     const { name, alias, email, dateOfBirth, address, profilePhoto } = req.body;
 
     if (!name || !alias || !email || !dateOfBirth || !address) {
@@ -200,10 +224,9 @@ export const updateProfile = async (req, res) => {
       });
     }
 
-    // Préparer les données à mettre à jour
     const updateData = { name, alias, email, dateOfBirth, address };
-    
-    // Ajouter la photo si elle est fournie et valide (commence par data: = base64)
+
+    // Ajouter la photo si elle est fournie et valide
     if (profilePhoto && typeof profilePhoto === 'string' && profilePhoto.startsWith('data:')) {
       updateData.profilePhoto = profilePhoto;
     }

@@ -5,8 +5,10 @@ import { verifyToken } from "../middleware/auth.middleware.js"; // À importer d
 const router = express.Router();
 
 // Routes d'authentification
-router.post("/signup", signup);   // POST pour créer un nouvel utilisateur
-router.post("/login", login);     // POST pour se connecter
+// La requête POST /signup arrive ici
+router.post("/signup", signup); // ← Appelle la fonction signup du contrôleur
+// La requête POST /login arrive ici
+router.post("/login", login); // Appelle la fonction login du contrôleur
 router.post("/logout", logout);   // POST pour se déconnecter
 
 // Routes protégées (authentification requise)

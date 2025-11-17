@@ -1,6 +1,7 @@
-import mongoose from "mongoose";
+import mongoose from "mongoose";//Elle importe le module Mongoose dans ton fichier.
 
 const userSchema = new mongoose.Schema(
+  //mongoose.Schema:un modèle qui décrit à quoi ressemble un utilisateur dans ta base de données.
   {
     name: {
       type: String,
@@ -38,7 +39,7 @@ const userSchema = new mongoose.Schema(
     },
     profilePhoto: {
       type: String,
-      default: null,
+      default: null,//pas obligatoire
       // Stocke la photo en base64 ou URL
     },
     role: {
@@ -55,9 +56,7 @@ const userSchema = new mongoose.Schema(
       default: false
     },
     resetPasswordToken: String,
-    resetPasswordExpiresAt: Date,
-    verificationToken: String,
-    verificationTokenExpiresAt: Date,
+    resetPasswordExpiresAt: Date
   },
   { timestamps: true }
 );
@@ -65,3 +64,4 @@ const userSchema = new mongoose.Schema(
 
 
 export const User = mongoose.model("User", userSchema);
+//Cette ligne crée la collection “users” dans MongoDB et te donne un objet User pour ajouter, chercher ou modifier des utilisateurs.
