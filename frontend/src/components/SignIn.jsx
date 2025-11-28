@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { loginUser } from "../api/api";
 
 const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,25 +21,13 @@ const SignIn = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-        credentials: 'include',
+      const data = await loginUser({
+        email: formData.email,
+        password: formData.password
       });
 
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.message || "Erreur de connexion");
-      }
-
-      // Stocker les infos utilisateur dans localStorage
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      // 🎯 Message de succès basé sur le rôle
       if (data.user.role === 'admin') {
         setSuccess("Connexion réussie ! Redirection vers le Dashboard Admin...");
         console.log("🔐 Redirection vers Admin Dashboard");

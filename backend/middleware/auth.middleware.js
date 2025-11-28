@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 export const verifyToken = (req, res, next) => {
   try {
     // Essaie de récupérer le token de différentes sources
-    let token = req.cookies.token;
+    let token = req.cookies.token;//On cherche le token dans les cookies(req.cookies.token)
     
     if (!token && req.headers.authorization) {
       token = req.headers.authorization.split(" ")[1];
@@ -16,7 +16,7 @@ export const verifyToken = (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);//décoded=on récupère les infos qui sont à l'intérieur du token
     req.user = { _id: decoded.userId }; // Extrait userId du token et le met en _id
     next();
   } catch (error) {

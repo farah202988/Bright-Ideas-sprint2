@@ -26,7 +26,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// Cookie Parser (AVANT les routes)
+// Cookie Parser 
 app.use(cookieParser());
 
 // Parser JSON (avec limite pour les images en base64)

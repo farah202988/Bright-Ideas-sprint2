@@ -21,7 +21,7 @@ const ManageUsers = () => {
   });
 
   // Charger tous les utilisateurs au montage
-  useEffect(() => {
+  useEffect(() => {//Dès que la page Admin s’ouvre, on charge automatiquement la liste des utilisateurs.
     fetchUsers();
   }, []);
 
@@ -110,7 +110,7 @@ const ManageUsers = () => {
       setError(err.message || 'Erreur lors de la mise à jour');
     }
   };
-
+//////supprimer un utilisateur
   const handleDeleteUser = async (userId) => {
     setError('');
     setSuccess('');
@@ -163,7 +163,7 @@ const ManageUsers = () => {
     <div className="manage-users-container">
       <div className="manage-users-header">
         <div className="header-content">
-          <h2>👥 Gestion des Contacts</h2>
+          <h2>👥 Gestion des utilisateurs</h2>
           <div className="contact-count">
             <span className="count-number">{filteredUsers.length}</span>
             <span className="count-text">Contact{filteredUsers.length !== 1 ? 's' : ''}</span>

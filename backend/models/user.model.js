@@ -50,15 +50,12 @@ const userSchema = new mongoose.Schema(
     lastLogin: {
       type: Date,
       default: Date.now
-    },
-    isVerified: {
-      type: Boolean,
-      default: false
-    },
-    resetPasswordToken: String,
-    resetPasswordExpiresAt: Date
+    }
+
   },
-  { timestamps: true }
+  { timestamps: true }//option Mongoose qui ajoute automatiquement deux champs :createdAt  et updatedAt
+
+
 );
 
 

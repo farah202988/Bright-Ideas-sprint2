@@ -40,23 +40,7 @@ export const signup = async (req, res) => {
       });
     }
 
-    // NOUVELLE VALIDATION : Vérifier que l'utilisateur a au moins 15 ans
-    const birthDate = new Date(dateOfBirth);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    // Ajuster l'âge si l'anniversaire n'est pas encore passé cette année
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
 
-    if (age < 15) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Vous devez avoir au moins 15 ans pour vous inscrire" 
-      });
-    }
 
     // Vérifier si l'email existe déjà
     const userAlreadyExists = await User.findOne({ email });
@@ -90,7 +74,7 @@ export const signup = async (req, res) => {
       password: hashedPassword
     });
 
-    await user.save();
+    await user.save();//////////////////////////////
 
     // Générer JWT et cookie
     generateTokenAndSetCookie(res, user._id);
