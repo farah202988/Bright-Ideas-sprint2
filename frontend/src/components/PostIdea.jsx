@@ -31,52 +31,71 @@ const PostIdea = ({ user }) => {
     setIdeaImage(null);
   };
 
-  const handleSubmit = async () => {
-    setError('');
-    setSuccess('');
+// Dans PostIdea.jsx, remplacez la fonction handleSubmit par celle-ci:
 
-    if (!ideaText.trim()) {
-      setError('Please enter your idea');
-      return;
+const handleSubmit = async () => {
+  // 1. Réinitialiser les messages
+  setError('');
+  setSuccess('');
+
+  // 2. Vérifier que le texte n'est pas vide
+  if (!ideaText.trim()) {
+    setError('Veuillez entrer votre idée');
+    return;
+  }
+
+  // 3. Vérifier la longueur minimale
+  if (ideaText.length < 10) {
+    setError('Votre idée doit contenir au moins 10 caractères');
+    return;
+  }
+
+  // 4. Commencer le chargement
+  setLoading(true);
+
+  try {
+    // 5. Envoyer la requête au backend
+    const response = await fetch('http://localhost:5000/api/ideas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // Pour envoyer le cookie de connexion
+      body: JSON.stringify({
+        text: ideaText,
+        image: ideaImage
+      }),
+    });
+
+    // 6. Récupérer la réponse
+    const data = await response.json();
+
+    // 7. Vérifier si ça a marché
+    if (!data.success) {
+      throw new Error(data.message || 'Erreur lors de la publication');
     }
 
-    if (ideaText.length < 10) {
-      setError('Your idea must contain at least 10 characters');
-      return;
-    }
+    // 8. Afficher le message de succès
+    setSuccess('Idée publiée avec succès! 🎉');
+    
+    // 9. Vider le formulaire
+    setIdeaText('');
+    setIdeaImage(null);
+    setIsExpanded(false);
 
-    setLoading(true);
+    // 10. Cacher le message après 3 secondes
+    setTimeout(() => {
+      setSuccess('');
+      // Recharger la page pour voir la nouvelle idée
+      window.location.reload();
+    }, 2000);
 
-    try {
-      // TODO: Replace with your actual API endpoint
-      // const response = await fetch('http://localhost:5000/api/ideas', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   credentials: 'include',
-      //   body: JSON.stringify({
-      //     text: ideaText,
-      //     image: ideaImage
-      //   }),
-      // });
-
-      // Simulating the API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setSuccess('Idea published successfully! 🎉');
-      setIdeaText('');
-      setIdeaImage(null);
-      setIsExpanded(false);
-
-      setTimeout(() => {
-        setSuccess('');
-      }, 3000);
-
-    } catch (err) {
-      setError(err.message || 'Error publishing idea');
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    // Si erreur, afficher le message
+    setError(err.message || 'Erreur lors de la publication');
+  } finally {
+    // Arrêter le chargement
+    setLoading(false);
+  }
+};
 
   return (
     <div className="post-idea-container">

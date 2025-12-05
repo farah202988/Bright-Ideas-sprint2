@@ -8,6 +8,7 @@ import { connectDB } from "./db/connectDB.js";
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
 import adminRoutes from "./routes/admin.route.js";
+import ideaRoutes from "./routes/idea.route.js";
 
 // Chargement des variables d'environnement
 dotenv.config();
@@ -48,6 +49,9 @@ app.use("/api/users", userRoutes);
 
 // Routes d'administration
 app.use("/api/admin", adminRoutes);
+
+// Routes des idées
+app.use("/api/ideas", ideaRoutes);
 
 // ====== ERROR HANDLER ======
 

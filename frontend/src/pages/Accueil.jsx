@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PostIdea from '../components/PostIdea'; // ← Import du nouveau composant
+import PostIdea from '../components/PostIdea';
+import IdeaList from '../components/IdeaList'; // ← Import du nouveau composant
 import '../styles/accueil.css';
 import bgImage from '../assets/bright-ideas-bg.jpg';
 
@@ -220,16 +221,17 @@ const Acceuil = () => {
           </div>
         </section>
 
-        <main className="main-content">
-          {/* ⭐ NOUVELLE SECTION : Poster une idée */}
-          <PostIdea user={user} />
+      <main className="main-content">
+        {/* ⭐ NOUVELLE SECTION : Poster une idée */}
+        <PostIdea user={user} />
 
-          {/* Contenu existant */}
-          <div className="panel card-panel">
-            <h2>🚀 Fil d'actualités</h2>
-            <p>Les idées de la communauté apparaîtront ici !</p>
-          </div>
-        </main>
+        {/* ⭐ FIL D'IDÉES (connexion avec le backend) */}
+        <section className="panel card-panel">
+          {/* Ici on affiche les idées venant du backend */}
+          <IdeaList currentUser={user} />
+        </section>
+      </main>
+
       </div>
 
       {/* SIDEBAR DROITE (Contenu futur) */}
