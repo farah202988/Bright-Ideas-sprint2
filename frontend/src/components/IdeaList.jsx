@@ -7,6 +7,9 @@ const IdeaList = ({ currentUser }) => {
   const [ideas, setIdeas] = useState([]); // Liste des idées
   const [loading, setLoading] = useState(true); // État de chargement
   const [error, setError] = useState(''); // Messages d'erreur
+  const [openMenuId, setOpenMenuId] = useState(null); // ID du menu ouvert
+  const [editingIdea, setEditingIdea] = useState(null); // Idée en cours d'édition
+  const [editText, setEditText] = useState(''); // Texte édité
 
   // Fonction pour récupérer les idées
   const fetchIdeas = async () => {
@@ -42,6 +45,15 @@ const IdeaList = ({ currentUser }) => {
     fetchIdeas();
   }, []); // [] = une seule fois au démarrage
 
+  // Fermer le menu si on clique ailleurs
+  useEffect(() => {
+    const handleClickOutside = () => setOpenMenuId(null);
+    if (openMenuId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openMenuId]);
+
   // Fonction pour supprimer une idée
   const handleDelete = async (ideaId) => {
     // Demander confirmation
@@ -61,12 +73,66 @@ const IdeaList = ({ currentUser }) => {
       // 2. Si succès, retirer l'idée de la liste
       if (data.success) {
         setIdeas(ideas.filter(idea => idea._id !== ideaId));
+        setOpenMenuId(null);
       }
 
     } catch (err) {
       console.error('Erreur suppression:', err);
       alert('Erreur lors de la suppression');
     }
+  };
+
+  // Fonction pour démarrer l'édition
+  const handleStartEdit = (idea) => {
+    setEditingIdea(idea._id);
+    setEditText(idea.text);
+    setOpenMenuId(null);
+  };
+
+  // Fonction pour sauvegarder la modification
+  const handleSaveEdit = async (ideaId) => {
+    if (!editText.trim() || editText.trim().length < 10) {
+      alert('Le texte doit contenir au moins 10 caractères');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/ideas/${ideaId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ text: editText }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Mettre à jour l'idée dans la liste
+        setIdeas(ideas.map(idea => 
+          idea._id === ideaId ? { ...idea, text: editText } : idea
+        ));
+        setEditingIdea(null);
+        setEditText('');
+      } else {
+        alert(data.message || 'Erreur lors de la modification');
+      }
+
+    } catch (err) {
+      console.error('Erreur modification:', err);
+      alert('Erreur lors de la modification');
+    }
+  };
+
+  // Fonction pour annuler l'édition
+  const handleCancelEdit = () => {
+    setEditingIdea(null);
+    setEditText('');
+  };
+
+  // Fonction pour basculer le menu
+  const toggleMenu = (e, ideaId) => {
+    e.stopPropagation();
+    setOpenMenuId(openMenuId === ideaId ? null : ideaId);
   };
 
   // Fonction pour formater la date
@@ -123,6 +189,9 @@ const IdeaList = ({ currentUser }) => {
         const authorPhoto = idea.author?.profilePhoto;
         const authorInitial = authorName.charAt(0).toUpperCase();
 
+        // Vérifier si cette idée est en cours d'édition
+        const isEditing = editingIdea === idea._id;
+
         return (
           <div key={idea._id} className="idea-card">
             {/* En-tête avec auteur */}
@@ -144,34 +213,85 @@ const IdeaList = ({ currentUser }) => {
                 </div>
               </div>
 
-              {/* Bouton supprimer (seulement pour l'auteur) */}
+              {/* Menu trois points (seulement pour l'auteur) */}
               {isAuthor && (
-                <button 
-                  className="idea-delete-btn" 
-                  onClick={() => handleDelete(idea._id)}
-                  title="Supprimer"
-                >
-                  🗑️
-                </button>
+                <div className="idea-menu-container">
+                  <button 
+                    className="idea-menu-btn" 
+                    onClick={(e) => toggleMenu(e, idea._id)}
+                    title="Options"
+                  >
+                    ⋮
+                  </button>
+                  
+                  {/* Menu déroulant */}
+                  {openMenuId === idea._id && (
+                    <div className="idea-dropdown-menu">
+                      <button 
+                        className="idea-dropdown-item edit"
+                        onClick={() => handleStartEdit(idea)}
+                      >
+                        ✏️ Modifier
+                      </button>
+                      <button 
+                        className="idea-dropdown-item delete"
+                        onClick={() => handleDelete(idea._id)}
+                      >
+                        🗑️ Supprimer
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
             {/* Contenu de l'idée */}
             <div className="idea-content">
-              <p className="idea-text">{idea.text}</p>
-              
-              {/* Image si elle existe */}
-              {idea.image && (
-                <div className="idea-image-container">
-                  <img src={idea.image} alt="Idea" className="idea-image" />
+              {isEditing ? (
+                // Mode édition
+                <div className="idea-edit-container">
+                  <textarea
+                    className="idea-edit-textarea"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    rows="4"
+                  />
+                  <div className="idea-edit-actions">
+                    <button 
+                      className="idea-edit-save-btn"
+                      onClick={() => handleSaveEdit(idea._id)}
+                    >
+                      ✓ Enregistrer
+                    </button>
+                    <button 
+                      className="idea-edit-cancel-btn"
+                      onClick={handleCancelEdit}
+                    >
+                      ✕ Annuler
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                // Mode affichage normal
+                <>
+                  <p className="idea-text">{idea.text}</p>
+                  
+                  {/* Image si elle existe */}
+                  {idea.image && (
+                    <div className="idea-image-container">
+                      <img src={idea.image} alt="Idea" className="idea-image" />
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
             {/* Statistiques */}
-            <div className="idea-stats">
-              <span>❤️ {idea.likesCount || 0} likes</span>
-            </div>
+            {!isEditing && (
+              <div className="idea-stats">
+                <span>❤️ {idea.likesCount || 0} likes</span>
+              </div>
+            )}
           </div>
         );
       })}

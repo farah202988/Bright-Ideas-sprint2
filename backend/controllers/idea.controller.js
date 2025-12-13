@@ -68,6 +68,63 @@ export const getAllIdeas = async (req, res) => {
   }
 };
 
+// ========== MODIFIER UNE IDÉE ========== (NOUVELLE FONCTION)
+export const updateIdea = async (req, res) => {
+  try {
+    // 1. Récupérer l'ID de l'idée et le nouveau texte
+    const { id } = req.params;
+    const { text } = req.body;
+    const userId = req.user._id;
+
+    // 2. Vérifier que le texte existe et fait au moins 10 caractères
+    if (!text || text.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Le texte doit contenir au moins 10 caractères"
+      });
+    }
+
+    // 3. Trouver l'idée
+    const idea = await Idea.findById(id);
+
+    if (!idea) {
+      return res.status(404).json({
+        success: false,
+        message: "Idée non trouvée"
+      });
+    }
+
+    // 4. Vérifier que c'est bien l'auteur qui modifie
+    if (idea.author.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Vous ne pouvez pas modifier cette idée"
+      });
+    }
+
+    // 5. Mettre à jour l'idée
+    idea.text = text;
+    await idea.save();
+
+    // 6. Remplir les infos de l'auteur
+    await idea.populate('author', 'name alias profilePhoto');
+
+    // 7. Renvoyer la confirmation
+    res.status(200).json({
+      success: true,
+      message: "Idée modifiée avec succès",
+      idea: idea
+    });
+
+  } catch (error) {
+    console.error("Erreur:", error);
+    res.status(400).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
 // ========== SUPPRIMER UNE IDÉE ==========
 export const deleteIdea = async (req, res) => {
   try {

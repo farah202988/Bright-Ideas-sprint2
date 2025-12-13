@@ -2,23 +2,21 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
-import Accueil from './pages/Accueil';
+import Acceuil from './pages/Accueil';
+import MyIdeas from './pages/MyIdeas'; // ← NOUVEAU
 import AdminDashboard from './pages/AdminDashboard';
+import './App.css';
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Routes publiques */}
+        <Route path="/" element={<Navigate to="/signin" />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
-        
-        {/* Routes protégées */}
-        <Route path="/accueil" element={<Accueil />} />
+        <Route path="/accueil" element={<Acceuil />} />
+        <Route path="/my-ideas" element={<MyIdeas />} /> {/* ← NOUVELLE ROUTE */}
         <Route path="/admin" element={<AdminDashboard />} />
-        
-        {/* Redirection par défaut */}
-        <Route path="/" element={<Navigate to="/signin" replace />} />
       </Routes>
     </Router>
   );

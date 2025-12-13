@@ -225,9 +225,8 @@ const Acceuil = () => {
         {/* ⭐ NOUVELLE SECTION : Poster une idée */}
         <PostIdea user={user} />
 
-        {/* ⭐ FIL D'IDÉES (connexion avec le backend) */}
-        <section className="panel card-panel">
-          {/* Ici on affiche les idées venant du backend */}
+        {/* ⭐ FIL D'IDÉES (connexion avec le backend) - CLASSE RETIRÉE */}
+        <section>
           <IdeaList currentUser={user} />
         </section>
       </main>
