@@ -21,24 +21,32 @@ const ideaSchema = new mongoose.Schema(
     // Qui a posté l'idée (référence vers User)
     author: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
+      ref: "User",
+      required: true,
     },
-    
-    // Nombre de likes
+
+    // Utilisateurs qui ont liké cette idée
+    likedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    // Nombre de likes (dérivé de likedBy mais stocké pour performance)
     likesCount: {
       type: Number,
-      default: 0
+      default: 0,
     },
-    
+
     // Nombre de commentaires
     commentsCount: {
       type: Number,
-      default: 0
-    }
+      default: 0,
+    },
   },
-  { 
-    timestamps: true // Ajoute automatiquement createdAt et updatedAt
+  {
+    timestamps: true, // Ajoute automatiquement createdAt et updatedAt
   }
 );
 

@@ -1,4 +1,5 @@
 import { User } from "../models/user.model.js";
+import { Idea } from "../models/idea.model.js";
 
 // GET ADMIN DASHBOARD STATS
 export const getDashboardStats = async (req, res) => {
@@ -7,10 +8,28 @@ export const getDashboardStats = async (req, res) => {
     const adminCount = await User.countDocuments({ role: "admin" });
     const verifiedUsers = await User.countDocuments({ isVerified: true });
     const unverifiedUsers = totalUsers - verifiedUsers;
-    
+
     // Utilisateurs actifs (connexion dans les 7 derniers jours)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const activeUsers = await User.countDocuments({ lastLogin: { $gte: sevenDaysAgo } });
+    const activeUsers = await User.countDocuments({
+      lastLogin: { $gte: sevenDaysAgo },
+    });
+
+    // Statistiques sur les idées et les likes
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const totalIdeas = await Idea.countDocuments();
+    const ideasThisMonth = await Idea.countDocuments({
+      createdAt: { $gte: startOfMonth },
+    });
+
+    const ideas = await Idea.find().select("likesCount createdAt");
+    const totalLikes = ideas.reduce((sum, i) => sum + (i.likesCount || 0), 0);
+    const likesThisMonth = ideas
+      .filter((i) => i.createdAt >= startOfMonth)
+      .reduce((sum, i) => sum + (i.likesCount || 0), 0);
 
     res.status(200).json({
       success: true,
@@ -20,6 +39,10 @@ export const getDashboardStats = async (req, res) => {
         verifiedUsers,
         unverifiedUsers,
         activeUsers,
+        totalIdeas,
+        ideasThisMonth,
+        totalLikes,
+        likesThisMonth,
       },
     });
   } catch (error) {
@@ -230,6 +253,49 @@ export const bulkDeleteUsers = async (req, res) => {
       success: true,
       message: `${result.deletedCount} utilisateur(s) supprimé(s)`,
       deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+// ====== GESTION DES IDÉES PAR L'ADMIN ======
+
+// Récupérer toutes les idées avec auteur et likes
+export const getAllIdeasAdmin = async (req, res) => {
+  try {
+    const ideas = await Idea.find()
+      .populate("author", "name alias email profilePhoto")
+      .populate("likedBy", "name alias email profilePhoto")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      ideas,
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+// Supprimer une idée (admin)
+export const deleteIdeaAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const idea = await Idea.findById(id);
+    if (!idea) {
+      return res.status(404).json({
+        success: false,
+        message: "Idée non trouvée",
+      });
+    }
+
+    await Idea.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Idée supprimée par l'administrateur",
     });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });

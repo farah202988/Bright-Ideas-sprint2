@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
 import Accueil from './pages/Accueil';
+import MyIdeas from './pages/MyIdeas';
+import Statistics from './pages/Statistics';
 import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
@@ -15,6 +17,8 @@ function App() {
         
         {/* Routes protégées */}
         <Route path="/accueil" element={<Accueil />} />
+        <Route path="/my-ideas" element={<MyIdeas />} />
+        <Route path="/statistics" element={<Statistics />} />
         <Route path="/admin" element={<AdminDashboard />} />
         
         {/* Redirection par défaut */}

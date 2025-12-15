@@ -13,6 +13,8 @@ const AdminDashboard = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard'); // Pour switcher entre sections
+  const [stats, setStats] = useState(null);
+  const [statsError, setStatsError] = useState('');
   const navigate = useNavigate();
 
   const [editData, setEditData] = useState({
@@ -56,6 +58,29 @@ const AdminDashboard = () => {
       profilePhoto: userData.profilePhoto || null,
     });
   }, [navigate]);
+
+  // Charger les statistiques admin
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/admin/dashboard-stats', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        const data = await response.json();
+        if (!data.success) {
+          setStatsError(data.message || 'Erreur lors du chargement des statistiques');
+          return;
+        }
+        setStats(data.stats);
+      } catch (err) {
+        console.error('Erreur stats admin:', err);
+        setStatsError('Erreur lors du chargement des statistiques');
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -238,14 +263,23 @@ const AdminDashboard = () => {
           {/* SECTION DASHBOARD */}
           {activeSection === 'dashboard' && (
             <>
-              {/* Stats Cards - SEULEMENT LES STATS */}
+              {/* Stats Cards - reliées au backend */}
               <div className="stats-grid">
                 <div className="stat-card card-panel">
                   <div className="stat-icon">👥</div>
                   <div className="stat-content">
                     <h3>Total Utilisateurs</h3>
-                    <p className="stat-number">1,234</p>
-                    <span className="stat-trend up">+12% ce mois</span>
+                    <p className="stat-number">{stats?.totalUsers ?? '...'}</p>
+                    <span className="stat-trend up">Admins: {stats?.adminCount ?? '...'}</span>
+                  </div>
+                </div>
+
+                <div className="stat-card card-panel">
+                  <div className="stat-icon">✅</div>
+                  <div className="stat-content">
+                    <h3>Utilisateurs Vérifiés</h3>
+                    <p className="stat-number">{stats?.verifiedUsers ?? '...'}</p>
+                    <span className="stat-trend neutral">Non vérifiés: {stats?.unverifiedUsers ?? '...'}</span>
                   </div>
                 </div>
 
@@ -253,29 +287,26 @@ const AdminDashboard = () => {
                   <div className="stat-icon">💡</div>
                   <div className="stat-content">
                     <h3>Idées Publiées</h3>
-                    <p className="stat-number">5,678</p>
-                    <span className="stat-trend up">+8% ce mois</span>
+                    <p className="stat-number">{stats?.totalIdeas ?? '...'}</p>
+                    <span className="stat-trend up">Ce mois: {stats?.ideasThisMonth ?? '...'}</span>
                   </div>
                 </div>
 
                 <div className="stat-card card-panel">
-                  <div className="stat-icon">⚠️</div>
+                  <div className="stat-icon">❤️</div>
                   <div className="stat-content">
-                    <h3>Rapports en attente</h3>
-                    <p className="stat-number">23</p>
-                    <span className="stat-trend down">-5% ce mois</span>
-                  </div>
-                </div>
-
-                <div className="stat-card card-panel">
-                  <div className="stat-icon">⭐</div>
-                  <div className="stat-content">
-                    <h3>Évaluations</h3>
-                    <p className="stat-number">4.8/5</p>
-                    <span className="stat-trend neutral">Stable</span>
+                    <h3>Total Likes</h3>
+                    <p className="stat-number">{stats?.totalLikes ?? '...'}</p>
+                    <span className="stat-trend up">Likes ce mois: {stats?.likesThisMonth ?? '...'}</span>
                   </div>
                 </div>
               </div>
+
+              {statsError && (
+                <div className="alert alert-error" style={{ marginTop: '16px' }}>
+                  {statsError}
+                </div>
+              )}
             </>
           )}
 

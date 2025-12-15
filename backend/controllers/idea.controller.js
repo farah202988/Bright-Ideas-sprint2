@@ -12,7 +12,7 @@ export const createIdea = async (req, res) => {
     if (!text || text.trim().length < 10) {
       return res.status(400).json({
         success: false,
-        message: "Le texte doit contenir au moins 10 caractères"
+        message: "Le texte doit contenir au moins 10 caractères",
       });
     }
 
@@ -20,27 +20,26 @@ export const createIdea = async (req, res) => {
     const newIdea = new Idea({
       text: text,
       image: image || null,
-      author: userId
+      author: userId,
     });
 
     // 4. Sauvegarder dans la base de données
     await newIdea.save();
 
     // 5. Remplir les infos de l'auteur (nom, photo, etc.)
-    await newIdea.populate('author', 'name alias profilePhoto');
+    await newIdea.populate("author", "name alias profilePhoto");
 
     // 6. Renvoyer la réponse
     res.status(201).json({
       success: true,
       message: "Idée publiée avec succès",
-      idea: newIdea
+      idea: newIdea,
     });
-
   } catch (error) {
     console.error("Erreur:", error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message 
+    res.status(400).json({
+      success: false,
+      message: error.message,
     });
   }
 };
@@ -50,25 +49,76 @@ export const getAllIdeas = async (req, res) => {
   try {
     // 1. Chercher toutes les idées dans la base
     const ideas = await Idea.find()
-      .populate('author', 'name alias profilePhoto') // Ajouter les infos de l'auteur
+      .populate("author", "name alias profilePhoto") // Ajouter les infos de l'auteur
+      .populate("likedBy", "name alias profilePhoto") // Infos sur qui a liké
       .sort({ createdAt: -1 }); // Trier par date (plus récent en premier)
 
     // 2. Renvoyer les idées
     res.status(200).json({
       success: true,
-      ideas: ideas
+      ideas: ideas,
     });
-
   } catch (error) {
     console.error("Erreur:", error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message 
+    res.status(400).json({
+      success: false,
+      message: error.message,
     });
   }
 };
 
-// ========== SUPPRIMER UNE IDÉE ==========
+// ========== METTRE À JOUR UNE IDÉE (AUTEUR SEULEMENT) ==========
+export const updateIdea = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+    const { text, image } = req.body;
+
+    const idea = await Idea.findById(id);
+    if (!idea) {
+      return res.status(404).json({
+        success: false,
+        message: "Idée non trouvée",
+      });
+    }
+
+    // Vérifier que l'utilisateur est bien l'auteur
+    if (idea.author.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Vous ne pouvez pas modifier cette idée",
+      });
+    }
+
+    if (text && text.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Le texte doit contenir au moins 10 caractères",
+      });
+    }
+
+    if (text) idea.text = text;
+    if (image !== undefined) idea.image = image || null;
+
+    await idea.save();
+    await idea.populate("author", "name alias profilePhoto");
+    await idea.populate("likedBy", "name alias profilePhoto");
+
+    res.status(200).json({
+      success: true,
+      message: "Idée mise à jour avec succès",
+      idea,
+    });
+  } catch (error) {
+    console.error("Erreur:", error);
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ========== SUPPRIMER UNE IDÉE (AUTEUR SEULEMENT) ==========
 export const deleteIdea = async (req, res) => {
   try {
     // 1. Récupérer l'ID de l'idée à supprimer
@@ -81,7 +131,7 @@ export const deleteIdea = async (req, res) => {
     if (!idea) {
       return res.status(404).json({
         success: false,
-        message: "Idée non trouvée"
+        message: "Idée non trouvée",
       });
     }
 
@@ -89,7 +139,7 @@ export const deleteIdea = async (req, res) => {
     if (idea.author.toString() !== userId.toString()) {
       return res.status(403).json({
         success: false,
-        message: "Vous ne pouvez pas supprimer cette idée"
+        message: "Vous ne pouvez pas supprimer cette idée",
       });
     }
 
@@ -99,14 +149,62 @@ export const deleteIdea = async (req, res) => {
     // 5. Renvoyer la confirmation
     res.status(200).json({
       success: true,
-      message: "Idée supprimée avec succès"
+      message: "Idée supprimée avec succès",
     });
-
   } catch (error) {
     console.error("Erreur:", error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message 
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ========== LIKE / UNLIKE UNE IDÉE ==========
+export const toggleLikeIdea = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    const idea = await Idea.findById(id);
+    if (!idea) {
+      return res.status(404).json({
+        success: false,
+        message: "Idée non trouvée",
+      });
+    }
+
+    const hasLiked = idea.likedBy.some(
+      (u) => u.toString() === userId.toString()
+    );
+
+    if (hasLiked) {
+      // UNLIKE
+      idea.likedBy = idea.likedBy.filter(
+        (u) => u.toString() !== userId.toString()
+      );
+    } else {
+      // LIKE
+      idea.likedBy.push(userId);
+    }
+
+    idea.likesCount = idea.likedBy.length;
+
+    await idea.save();
+    await idea.populate("author", "name alias profilePhoto");
+    await idea.populate("likedBy", "name alias profilePhoto");
+
+    res.status(200).json({
+      success: true,
+      liked: !hasLiked,
+      likesCount: idea.likesCount,
+      idea,
+    });
+  } catch (error) {
+    console.error("Erreur:", error);
+    res.status(400).json({
+      success: false,
+      message: error.message,
     });
   }
 };

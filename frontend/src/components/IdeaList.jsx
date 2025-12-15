@@ -2,34 +2,45 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/ideaList.css';
 
-const IdeaList = ({ currentUser }) => {
+const IdeaList = ({ currentUser, filterByAuthorId }) => {
   // États pour stocker les données
   const [ideas, setIdeas] = useState([]); // Liste des idées
   const [loading, setLoading] = useState(true); // État de chargement
   const [error, setError] = useState(''); // Messages d'erreur
 
+  // États pour la modification via interface
+  const [editingIdea, setEditingIdea] = useState(null);
+  const [editText, setEditText] = useState('');
+
+  // État pour la fenêtre listant les likes
+  const [likesIdea, setLikesIdea] = useState(null);
+
   // Fonction pour récupérer les idées
   const fetchIdeas = async () => {
     try {
-      // 1. Faire la requête au backend
-      const response = await fetch('http://localhost:5000/api/ideas', {
+      const response = await fetch('/api/ideas', {
         method: 'GET',
         credentials: 'include',
       });
 
-      // 2. Récupérer les données
       const data = await response.json();
 
-      // 3. Vérifier si tout s'est bien passé
       if (data.success) {
-        setIdeas(data.ideas); // Mettre à jour les idées
+        let loadedIdeas = data.ideas;
+
+        // Si on demande un filtrage par auteur (page My Ideas)
+        if (filterByAuthorId) {
+          loadedIdeas = loadedIdeas.filter(
+            (idea) => idea.author?._id === filterByAuthorId
+          );
+        }
+
+        setIdeas(loadedIdeas); // Mettre à jour les idées
       } else {
-        setError('Erreur lors du chargement des idées');
+        setError(data.message || 'Erreur lors du chargement des idées');
       }
 
-      // 4. Arrêter le chargement
       setLoading(false);
-
     } catch (err) {
       console.error('Erreur:', err);
       setError('Erreur lors du chargement des idées');
@@ -42,30 +53,99 @@ const IdeaList = ({ currentUser }) => {
     fetchIdeas();
   }, []); // [] = une seule fois au démarrage
 
-  // Fonction pour supprimer une idée
+  // Fonction pour supprimer une idée (auteur)
   const handleDelete = async (ideaId) => {
-    // Demander confirmation
     if (!window.confirm('Voulez-vous vraiment supprimer cette idée ?')) {
       return;
     }
 
     try {
-      // 1. Envoyer la requête de suppression
-      const response = await fetch(`http://localhost:5000/api/ideas/${ideaId}`, {
+      const response = await fetch(`/api/ideas/${ideaId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
 
       const data = await response.json();
 
-      // 2. Si succès, retirer l'idée de la liste
       if (data.success) {
-        setIdeas(ideas.filter(idea => idea._id !== ideaId));
+        setIdeas((prev) => prev.filter((idea) => idea._id !== ideaId));
+      } else {
+        alert(data.message || 'Erreur lors de la suppression');
       }
-
     } catch (err) {
       console.error('Erreur suppression:', err);
       alert('Erreur lors de la suppression');
+    }
+  };
+
+  // Ouvrir le modal d'édition
+  const openEditModal = (idea) => {
+    setEditingIdea(idea);
+    setEditText(idea.text || '');
+  };
+
+  const closeEditModal = () => {
+    setEditingIdea(null);
+    setEditText('');
+  };
+
+  // Enregistrer la modification (auteur)
+  const handleSaveEdit = async () => {
+    if (!editingIdea) return;
+
+    const newText = editText.trim();
+    if (newText.length < 10) {
+      alert('Le texte doit contenir au moins 10 caractères');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/ideas/${editingIdea._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ text: newText }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setIdeas((prev) =>
+          prev.map((i) => (i._id === editingIdea._id ? data.idea : i))
+        );
+        closeEditModal();
+      } else {
+        alert(data.message || 'Erreur lors de la mise à jour');
+      }
+    } catch (err) {
+      console.error('Erreur mise à jour:', err);
+      alert('Erreur lors de la mise à jour');
+    }
+  };
+
+  // Fonction pour like / unlike
+  const handleToggleLike = async (idea) => {
+    if (!currentUser) {
+      alert("Vous devez être connecté pour liker une idée");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/ideas/${idea._id}/like`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setIdeas((prev) =>
+          prev.map((i) => (i._id === idea._id ? data.idea : i))
+        );
+      } else {
+        alert(data.message || "Erreur lors du like");
+      }
+    } catch (err) {
+      console.error("Erreur like:", err);
+      alert("Erreur lors du like");
     }
   };
 
@@ -111,20 +191,24 @@ const IdeaList = ({ currentUser }) => {
     );
   }
 
-  // Affichage de la liste des idées
+  // Affichage de la liste des idées + modals
   return (
-    <div className="ideas-container">
-      {ideas.map((idea) => {
+    <>
+      <div className="ideas-container">
+        {ideas.map((idea) => {
         // Vérifier si l'utilisateur est l'auteur
         const isAuthor = currentUser?._id === idea.author?._id;
+
+        // Vérifier si l'utilisateur a liké
+        const hasLiked = idea.likedBy?.some((u) => u._id === currentUser?._id);
         
         // Nom et photo de l'auteur
         const authorName = idea.author?.alias || idea.author?.name || 'Utilisateur';
         const authorPhoto = idea.author?.profilePhoto;
         const authorInitial = authorName.charAt(0).toUpperCase();
 
-        return (
-          <div key={idea._id} className="idea-card">
+          return (
+            <div key={idea._id} className="idea-card">
             {/* En-tête avec auteur */}
             <div className="idea-header">
               <div className="idea-author">
@@ -144,15 +228,24 @@ const IdeaList = ({ currentUser }) => {
                 </div>
               </div>
 
-              {/* Bouton supprimer (seulement pour l'auteur) */}
+              {/* Boutons éditer / supprimer (seulement pour l'auteur) */}
               {isAuthor && (
-                <button 
-                  className="idea-delete-btn" 
-                  onClick={() => handleDelete(idea._id)}
-                  title="Supprimer"
-                >
-                  🗑️
-                </button>
+                <div className="idea-actions">
+                  <button
+                    className="idea-edit-btn"
+                    onClick={() => openEditModal(idea)}
+                    title="Modifier"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    className="idea-delete-btn"
+                    onClick={() => handleDelete(idea._id)}
+                    title="Supprimer"
+                  >
+                    🗑️
+                  </button>
+                </div>
               )}
             </div>
 
@@ -168,13 +261,132 @@ const IdeaList = ({ currentUser }) => {
               )}
             </div>
 
-            {/* Statistiques */}
+            {/* Statistiques & like */}
             <div className="idea-stats">
-              <span>❤️ {idea.likesCount || 0} likes</span>
+              <button
+                className={`idea-like-btn ${hasLiked ? 'liked' : ''}`}
+                onClick={() => handleToggleLike(idea)}
+                title={hasLiked ? 'Retirer le like' : 'Liker cette idée'}
+              >
+                {hasLiked ? '❤️' : '🤍'}
+              </button>
+              <span
+                className="idea-likes-count"
+                onClick={() => {
+                  if (idea.likedBy && idea.likedBy.length > 0) {
+                    setLikesIdea(idea);
+                  }
+                }}
+              >
+                {idea.likesCount || 0} likes
+              </span>
             </div>
           </div>
         );
-      })}
+        })}
+      </div>
+
+      {/* Modal édition idée */}
+      <EditIdeaModal
+        isOpen={!!editingIdea}
+        text={editText}
+        onChangeText={setEditText}
+        onCancel={closeEditModal}
+        onSave={handleSaveEdit}
+      />
+
+      {/* Modal liste des likes */}
+      <LikesModal
+        idea={likesIdea}
+        onClose={() => setLikesIdea(null)}
+      />
+    </>
+  );
+};
+
+// Modal simple pour l'édition d'une idée
+const EditIdeaModal = ({ isOpen, text, onChangeText, onCancel, onSave }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div
+        className="modal-container"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: '600px' }}
+      >
+        <div className="modal-header">
+          <h2 className="modal-title">Modifier votre idée</h2>
+          <button className="modal-close" onClick={onCancel}>✕</button>
+        </div>
+        <div className="modal-body">
+          <div className="form-group">
+            <label className="form-label">Texte de l'idée</label>
+            <textarea
+              value={text}
+              onChange={(e) => onChangeText(e.target.value)}
+              rows={5}
+              className="form-input"
+              placeholder="Améliorez votre idée ici..."
+            />
+          </div>
+          <div className="form-actions">
+            <button className="btn btn-primary" onClick={onSave}>
+              Sauvegarder
+            </button>
+            <button className="btn btn-secondary" onClick={onCancel}>
+              Annuler
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Modal pour afficher la liste des likes d'une idée
+const LikesModal = ({ idea, onClose }) => {
+  if (!idea) return null;
+
+  const likedBy = idea.likedBy || [];
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-container"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: '480px' }}
+      >
+        <div className="modal-header">
+          <h2 className="modal-title">Personnes qui aiment cette idée</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          {likedBy.length === 0 ? (
+            <p>Aucun like pour le moment.</p>
+          ) : (
+            <ul className="likes-list">
+              {likedBy.map((user) => {
+                const name = user.alias || user.name || 'Utilisateur';
+                const initial = name.charAt(0).toUpperCase();
+
+                return (
+                  <li key={user._id} className="likes-list-item">
+                    <div className="likes-avatar">
+                      {user.profilePhoto ? (
+                        <img src={user.profilePhoto} alt={name} />
+                      ) : (
+                        <span>{initial}</span>
+                      )}
+                    </div>
+                    <span className="likes-name">{name}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
