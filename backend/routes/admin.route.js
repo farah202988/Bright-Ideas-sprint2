@@ -7,6 +7,8 @@ import {
   getUsersWithFilters,
   exportUsersData,
   bulkDeleteUsers,
+  getAllIdeasAdmin,
+  deleteIdeaAdmin,
 } from "../controllers/admin.controller.js";
 import { verifyToken } from "../middleware/auth.middleware.js";
 import { checkAdminRole, logAdminAction, validateAdminInput } from "../middleware/admin.middleware.js";
@@ -36,5 +38,9 @@ router.get("/export-users", verifyToken, checkAdminRole, logAdminAction, exportU
 
 // Bulk Delete Users
 router.delete("/bulk-delete", verifyToken, checkAdminRole, logAdminAction, validateAdminInput, bulkDeleteUsers);
+
+// Ideas moderation
+router.get("/ideas", verifyToken, checkAdminRole, logAdminAction, getAllIdeasAdmin);
+router.delete("/ideas/:id", verifyToken, checkAdminRole, logAdminAction, deleteIdeaAdmin);
 
 export default router;

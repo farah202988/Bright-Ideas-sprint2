@@ -1,46 +1,42 @@
 // src/api/api.js
 
-// Configuration de l'URL de base de votre API backend
-const API_BASE_URL = 'http://localhost:5000/api/auth';
+// On utilise une URL relative, le proxy CRA redirige vers http://localhost:5000
+const API_BASE_URL = '/api/auth';
 
-
-////////////////PARTIE de SIGNUP
-//Déclaration de la fonction signupUser
+// SIGNUP
 export const signupUser = async (userData) => {
   try {
-    // ENVOI des données au backend
-    const response = await fetch(`http://localhost:5000/api/auth/signup`, {
-      method: 'POST',                    
+    const response = await fetch(`${API_BASE_URL}/signup`, {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json', // ←On indique qu’on envoie du JSON.
+        'Content-Type': 'application/json',
       },
-      credentials: 'include',      // ← Autorise l’envoi des cookies
-      body: JSON.stringify({ //convertit l’objet en texte JSON
+      credentials: 'include',
+      body: JSON.stringify({
         name: userData.name,
         alias: userData.alias,
         email: userData.email,
         dateOfBirth: userData.dateOfBirth,
         address: userData.address,
         password: userData.password,
-        confirmPassword: userData.confirmPassword
+        confirmPassword: userData.confirmPassword,
       }),
     });
 
-    const data = await response.json();//Attends que le serveur envoie le JSON, puis transforme-le en véritable objet JavaScript.
+    const data = await response.json();
 
-    // ✅ Si réponse n'est pas OK, lancer erreur
     if (!response.ok) {
-      throw new Error(data.message || 'Erreur lors de l\'inscription');
+      throw new Error(data.message || "Erreur lors de l'inscription");
     }
 
-    return data; 
+    return data;
   } catch (error) {
     console.error('❌ Erreur API signup:', error);
     throw error;
   }
 };
 
-////////////////partie de signinnn
+// LOGIN
 export const loginUser = async (credentials) => {
   try {
     const response = await fetch(`${API_BASE_URL}/login`, {
@@ -48,16 +44,15 @@ export const loginUser = async (credentials) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include', // Important pour les cookies JWT
+      credentials: 'include',
       body: JSON.stringify({
         email: credentials.email,
-        password: credentials.password
+        password: credentials.password,
       }),
     });
 
     const data = await response.json();
 
-    // Si la réponse n'est pas OK, lancer une erreur avec le message du serveur
     if (!response.ok) {
       throw new Error(data.message || 'Erreur lors de la connexion');
     }
@@ -69,16 +64,12 @@ export const loginUser = async (credentials) => {
   }
 };
 
-/**
- * Fonction pour la déconnexion d'un utilisateur
- * Supprime le cookie JWT côté serveur
- * @returns {Promise<Object>} Réponse du serveur confirmant la déconnexion
- */
+// LOGOUT
 export const logoutUser = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/logout`, {
       method: 'POST',
-      credentials: 'include', // Important pour envoyer le cookie
+      credentials: 'include',
     });
 
     const data = await response.json();
