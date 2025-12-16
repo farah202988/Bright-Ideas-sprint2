@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ManageUsers from '../components/ManageUsers';
+import ManageIdeas from '../components/ManageIdeas';
 import '../styles/AdminDashboard.css';
 import bgImage from '../assets/bright-ideas-bg.jpg';
 
@@ -12,7 +13,7 @@ const AdminDashboard = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState('dashboard'); // Pour switcher entre sections
+  const [activeSection, setActiveSection] = useState('statistics'); // CHANGÉ: 'dashboard' → 'statistics'
   const [stats, setStats] = useState(null);
   const [statsError, setStatsError] = useState('');
   const navigate = useNavigate();
@@ -198,21 +199,26 @@ const AdminDashboard = () => {
 
         <nav className="sidebar-nav" aria-label="Main menu">
           <a 
-            href="#dashboard" 
-            onClick={() => setActiveSection('dashboard')}
-            className={`nav-item ${activeSection === 'dashboard' ? 'active' : ''}`}
+            href="#statistics" 
+            onClick={() => setActiveSection('statistics')}
+            className={`nav-item ${activeSection === 'statistics' ? 'active' : ''}`}
           >
-            Dashboard
+            📊 Statistiques
           </a>
           <a 
             href="#users" 
             onClick={() => setActiveSection('users')}
             className={`nav-item ${activeSection === 'users' ? 'active' : ''}`}
           >
-            Gestion Utilisateurs
+             Gestion Utilisateurs
           </a>
-          <a href="/admin/ideas" className="nav-item">Modération Idées</a>
-          <a href="/admin/stats" className="nav-item">Statistiques</a>
+          <a 
+            href="#ideas" 
+            onClick={() => setActiveSection('ideas')}
+            className={`nav-item ${activeSection === 'ideas' ? 'active' : ''}`}
+          >
+             Modération Idées
+          </a>
 
           <div
             className="nav-item profile-item"
@@ -253,17 +259,24 @@ const AdminDashboard = () => {
       <div className="main-content-wrapper">
         <section className="hero-section glass-hero hero-improved admin-hero" role="banner">
           <div className="hero-left hero-left-improved">
-            <h1 className="hero-title hero-title-improved">Administration Dashboard</h1>
+            <h1 className="hero-title hero-title-improved">
+              {activeSection === 'statistics' && 'Statistiques'}
+              {activeSection === 'users' && 'Gestion des Utilisateurs'}
+              {activeSection === 'ideas' && 'Modération des Idées'}
+            </h1>
             <div className="hero-accent" aria-hidden="true" />
-            <p className="hero-subtitle hero-subtitle-improved">Gérez les utilisateurs, modérez le contenu et consultez les statistiques.</p>
+            <p className="hero-subtitle hero-subtitle-improved">
+              {activeSection === 'statistics' && 'Vue d\'ensemble de votre plateforme'}
+              {activeSection === 'users' && 'Gérez les utilisateurs et leurs rôles'}
+              {activeSection === 'ideas' && 'Modérez le contenu des idées'}
+            </p>
           </div>
         </section>
 
         <main className="main-content">
-          {/* SECTION DASHBOARD */}
-          {activeSection === 'dashboard' && (
+          {/* SECTION STATISTIQUES */}
+          {activeSection === 'statistics' && (
             <>
-              {/* Stats Cards - reliées au backend */}
               <div className="stats-grid">
                 <div className="stat-card card-panel">
                   <div className="stat-icon">👥</div>
@@ -274,14 +287,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <div className="stat-card card-panel">
-                  <div className="stat-icon">✅</div>
-                  <div className="stat-content">
-                    <h3>Utilisateurs Vérifiés</h3>
-                    <p className="stat-number">{stats?.verifiedUsers ?? '...'}</p>
-                    <span className="stat-trend neutral">Non vérifiés: {stats?.unverifiedUsers ?? '...'}</span>
-                  </div>
-                </div>
+
 
                 <div className="stat-card card-panel">
                   <div className="stat-icon">💡</div>
@@ -314,6 +320,13 @@ const AdminDashboard = () => {
           {activeSection === 'users' && (
             <div className="card-panel users-section">
               <ManageUsers />
+            </div>
+          )}
+
+          {/* SECTION MODÉRATION IDÉES */}
+          {activeSection === 'ideas' && (
+            <div className="card-panel ideas-section">
+              <ManageIdeas />
             </div>
           )}
         </main>
