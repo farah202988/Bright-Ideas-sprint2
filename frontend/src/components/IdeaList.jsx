@@ -41,6 +41,13 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
           );
         }
 
+        // ⭐ TRI PAR NOMBRE DE LIKES DÉCROISSANT
+        loadedIdeas.sort((a, b) => {
+          const likesA = a.likesCount || 0;
+          const likesB = b.likesCount || 0;
+          return likesB - likesA; // Du plus grand au plus petit
+        });
+
         setIdeas(loadedIdeas);
       } else {
         setError(data.message || 'Erreur lors du chargement des idées');
@@ -132,9 +139,12 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
 
       const data = await response.json();
       if (data.success) {
-        setIdeas((prev) =>
-          prev.map((i) => (i._id === editingIdea._id ? data.idea : i))
-        );
+        // Mettre à jour la liste ET re-trier
+        setIdeas((prev) => {
+          const updated = prev.map((i) => (i._id === editingIdea._id ? data.idea : i));
+          // Re-trier après modification
+          return updated.sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
+        });
         setSuccess('✓ Idée modifiée avec succès');
         closeEditModal();
         setTimeout(() => setSuccess(''), 3000);
@@ -165,9 +175,12 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
 
       const data = await response.json();
       if (data.success) {
-        setIdeas((prev) =>
-          prev.map((i) => (i._id === idea._id ? data.idea : i))
-        );
+        // Mettre à jour la liste ET re-trier
+        setIdeas((prev) => {
+          const updated = prev.map((i) => (i._id === idea._id ? data.idea : i));
+          // Re-trier après like/unlike
+          return updated.sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
+        });
       } else {
         setError(data.message || "Erreur lors du like");
         setTimeout(() => setError(''), 3000);
