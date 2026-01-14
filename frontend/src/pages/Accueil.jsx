@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PostIdea from '../components/PostIdea';
-import IdeaList from '../components/IdeaList'; // ← Import du nouveau composant
+import IdeaList from '../components/IdeaList'; // 
 import '../styles/accueil.css';
 import bgImage from '../assets/bright-ideas-bg.jpg';
 
 const Acceuil = () => {
   const [user, setUser] = useState(null);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);//Ça sert à afficher ou cacher un menu déroulant (dropdown).
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState('info');//Ça sert à savoir quel onglet est actuellement actif (affiché) dans l’interface.
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
+ // États pour l'édition des informations personnelles
   const [editData, setEditData] = useState({
     name: '',
     alias: '',
@@ -23,7 +23,7 @@ const Acceuil = () => {
     address: '',
     profilePhoto: null,
   });
-
+  // État pour le formulaire de mot de passe
   const [passwordData, setPasswordData] = useState({
     oldPassword: '',
     newPassword: '',
@@ -32,21 +32,34 @@ const Acceuil = () => {
     showNew: false,
     showConfirm: false,
   });
-
+  
+    // ✅ Au montage du composant, récupérer les données utilisateur
   useEffect(() => {
+     // 1. Récupérer les données de localStorage
     const storedUser = localStorage.getItem('user');
+    // 2. Vérifier que les données existent
     if (!storedUser) {
+      // Si pas de user, rediriger vers signin
       navigate('/signin');
       return;
     }
-
+    
+    // 3. Convertir le JSON en objet JavaScript
     const userData = JSON.parse(storedUser);
+
+
     if (userData.role === 'admin') {
       navigate('/admin');
       return;
     }
-
+    // 4. Stocker dans le state du composant
     setUser(userData);
+    // userData contient: {
+    //   _id, name, alias, email, profilePhoto, role, isVerified, ...
+    // }
+   
+
+    //  Initialiser les données d'édition (editData) avec les données utilisateur actuelles
     setEditData({
       name: userData.name || '',
       alias: userData.alias || '',
@@ -55,32 +68,39 @@ const Acceuil = () => {
       address: userData.address || '',
       profilePhoto: userData.profilePhoto || null,
     });
-  }, [navigate]);
-
+  }, [navigate]);////
+  //Ce useEffect s’exécute uniquement lorsque la page d’accueil s’affiche, afin de vérifier l’utilisateur et effectuer la navigation (navigate) si nécessaire.
+      //"2001-05-20T00:00:00.000Z"
+      //userData.dateOfBirth.split('T'):Découpe la chaîne là où il y a la lettre T
+      //["2001-05-20",0:00:00.000Z"]
+      //.split('T')[0]:Prend le premier élément du tableau
+      //Résultat final: "2001-05-20"
   const handleLogout = () => {
     localStorage.removeItem('user');
     navigate('/signin');
   };
-
+ 
+  // Gestion des changements dans le formulaire d'informations personnelles
   const handleInfoChange = (e) => {
     setEditData({ ...editData, [e.target.id]: e.target.value });
   };
-
+  // Gestion du changement de la photo de profil
   const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files[0];//récupère le fichier sélectionné
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setEditData({ ...editData, profilePhoto: reader.result });
+      const reader = new FileReader();//créer un objet FileReader pour lire le fichier
+      reader.onloadend = () => {//quand la lecture est terminée
+        setEditData({ ...editData, profilePhoto: reader.result });//Met à jour l'état avec la donnée lue (data URL)
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(file);//lit le fichier en tant que data URL
     }
   };
-
+  // Gestion des changements dans le formulaire de changement de mot de passe
   const handlePasswordChange = (e) => {
     setPasswordData({ ...passwordData, [e.target.id]: e.target.value });
   };
 
+ // Sauvegarder les informations personnelles mises à jour
   const handleSaveInfo = async () => {
     setError('');
     setSuccess('');
@@ -93,7 +113,8 @@ const Acceuil = () => {
         dateOfBirth: editData.dateOfBirth,
         address: editData.address,
       };
-      if (editData.profilePhoto && editData.profilePhoto.startsWith('data:')) {
+      // Ajouter la photo de profil seulement si elle a été modifiée
+      if (editData.profilePhoto && editData.profilePhoto.startsWith('data:')) {//si c'est une NOUVELLE image encodée en base64 elle commence par 'data:'(data:image/png;base64,...)
         bodyData.profilePhoto = editData.profilePhoto;
       }
       const response = await fetch('http://localhost:5000/api/auth/update-profile', {
@@ -106,6 +127,7 @@ const Acceuil = () => {
       if (!data.success) throw new Error(data.message || "Erreur lors de la mise à jour");
       const updatedUser = { ...data.user, profilePhoto: editData.profilePhoto || data.user.profilePhoto };
       setUser(updatedUser);
+      // Mettre à jour les données dans localStorage
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setSuccess('Informations mises à jour avec succès !');
       setLoading(false);
@@ -134,7 +156,8 @@ const Acceuil = () => {
       const data = await response.json();
       if (!data.success) throw new Error(data.message || "Erreur lors du changement de mot de passe");
       setSuccess('Mot de passe changé avec succès !');
-      setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '', showOld: false, showNew: false, showConfirm: false });
+    
+      setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '', showOld: false, showNew: false, showConfirm: false });// Réinitialiser le formulaire
       setLoading(false);
     } catch (err) {
       setError(err.message || "Erreur lors du changement de mot de passe");

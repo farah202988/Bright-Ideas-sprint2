@@ -1,6 +1,7 @@
 // src/api/api.js
 
 // On utilise une URL relative, le proxy CRA redirige vers http://localhost:5000
+//On écrit /api/... et React envoie automatiquement la requête au backend sur le port 5000
 const API_BASE_URL = '/api/auth';
 
 // SIGNUP
@@ -31,12 +32,14 @@ export const signupUser = async (userData) => {
 
     return data;
   } catch (error) {
-    console.error('❌ Erreur API signup:', error);
+    console.error(' Erreur API signup:', error);
     throw error;
   }
 };
 
 // LOGIN
+//C’est une fonction JavaScript qui crée et envoie une requête HTTP vers l’API backend
+//“Cette fonction frontend sert à appeler l’API backend de login et à gérer la réponse afin de connecter l’utilisateur.”
 export const loginUser = async (credentials) => {
   try {
     const response = await fetch(`${API_BASE_URL}/login`, {

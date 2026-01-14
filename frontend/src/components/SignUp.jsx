@@ -45,7 +45,7 @@ const SignUp = () => {
     }
 
     try {
-      console.log('🔄 Tentative d\'inscription...', formData);
+
 
       // Appel API vers le backend
       const data = await signupUser({
@@ -57,15 +57,22 @@ const SignUp = () => {
         password: formData.password,
         confirmPassword: formData.confirmPassword
       });
+      console.log("📦 Réponse reçue :", data);
 
-      console.log("✅ Utilisateur créé :", data);
-      setSuccess("Inscription réussie ! Redirection vers la page de connexion...");
-      setLoading(false);
-      
-      // Redirection vers la page de connexion après inscription réussie (avec délai)
+  //  VÉRIFICATION DU SUCCÈS 
+  if (data.success) {
+    console.log("✅ Inscription réussie !");
+    console.log("Utilisateur créé :", data.user);
+    
+    setSuccess("Inscription réussie ! Redirection vers la page de connexion...");
+    setError(''); // Effacer les erreurs précédentes
+    
+    // Redirection après 2 secondes
       setTimeout(() => {
         navigate('/signin');
       }, 3000);
+    
+  } 
 
     } catch (err) {
       console.error('❌ Erreur inscription:', err);

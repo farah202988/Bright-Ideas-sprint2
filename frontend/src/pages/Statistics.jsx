@@ -4,35 +4,12 @@ import '../styles/accueil.css';
 import bgImage from '../assets/bright-ideas-bg.jpg';
 
 const Statistics = () => {
-  const [user, setUser] = useState(null);
-  const [stats, setStats] = useState({ totalIdeas: 0, totalLikes: 0, ideas: [] });
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null); // Données utilisateur
+  const [stats, setStats] = useState({ totalIdeas: 0, totalLikes: 0, ideas: [] }); // Statistiques utilisateur
+  const [loading, setLoading] = useState(true); // État de chargement
   const [error, setError] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('info');
-  const [profileError, setProfileError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [profileLoading, setProfileLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false); // État du dropdown Profile
   const navigate = useNavigate();
-
-  const [editData, setEditData] = useState({
-    name: '',
-    alias: '',
-    email: '',
-    dateOfBirth: '',
-    address: '',
-    profilePhoto: null,
-  });
-
-  const [passwordData, setPasswordData] = useState({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-    showOld: false,
-    showNew: false,
-    showConfirm: false,
-  });
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -47,18 +24,13 @@ const Statistics = () => {
       return;
     }
 
+    // Initialiser les données utilisateur
     setUser(userData);
-    setEditData({
-      name: userData.name || '',
-      alias: userData.alias || '',
-      email: userData.email || '',
-      dateOfBirth: userData.dateOfBirth ? userData.dateOfBirth.split('T')[0] : '',
-      address: userData.address || '',
-      profilePhoto: userData.profilePhoto || null,
-    });
 
+    // Fonction pour récupérer les statistiques utilisateur
     const fetchStats = async () => {
       try {
+        // Récupérer les idées de l'utilisateur
         const response = await fetch('/api/ideas', {
           method: 'GET',
           credentials: 'include',
@@ -71,16 +43,19 @@ const Statistics = () => {
           return;
         }
 
-        const myIdeas = (data.ideas || []).filter(
+        // Filtrer pour garder UNIQUEMENT les idées de l'utilisateur
+        const myIdeas = data.ideas.filter(
           (idea) => idea.author?._id === userData._id
         );
 
-        const totalIdeas = myIdeas.length;
-        const totalLikes = myIdeas.reduce(
+        const totalIdeas = myIdeas.length; // Nombre total d'idées
+        const totalLikes = myIdeas.reduce( // Calculer le total des likes
           (sum, i) => sum + (i.likesCount || 0),
           0
         );
 
+        // Ce code parcourt les idées de l'utilisateur et crée un nouveau tableau d'objets plus simples.
+        // Il ne garde que les informations nécessaires (id, texte, likes, date) pour faciliter l'affichage dans l'interface.
         const ideas = myIdeas.map((i) => ({
           id: i._id,
           text: i.text,
@@ -105,97 +80,21 @@ const Statistics = () => {
     navigate('/signin');
   };
 
-  const handleInfoChange = (e) => {
-    setEditData({ ...editData, [e.target.id]: e.target.value });
-  };
-
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setEditData({ ...editData, profilePhoto: reader.result });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handlePasswordChange = (e) => {
-    setPasswordData({ ...passwordData, [e.target.id]: e.target.value });
-  };
-
-  const handleSaveInfo = async () => {
-    setProfileError('');
-    setSuccess('');
-    setProfileLoading(true);
-    try {
-      const bodyData = {
-        name: editData.name,
-        alias: editData.alias,
-        email: editData.email,
-        dateOfBirth: editData.dateOfBirth,
-        address: editData.address,
-      };
-      if (editData.profilePhoto && editData.profilePhoto.startsWith('data:')) {
-        bodyData.profilePhoto = editData.profilePhoto;
-      }
-      const response = await fetch('http://localhost:5000/api/auth/update-profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(bodyData),
-      });
-      const data = await response.json();
-      if (!data.success) throw new Error(data.message || "Erreur lors de la mise à jour");
-      const updatedUser = { ...data.user, profilePhoto: editData.profilePhoto || data.user.profilePhoto };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      setSuccess('Informations mises à jour avec succès !');
-      setProfileLoading(false);
-    } catch (err) {
-      setProfileError(err.message || "Erreur lors de la mise à jour");
-      setProfileLoading(false);
-    }
-  };
-
-  const handleChangePassword = async () => {
-    setProfileError('');
-    setSuccess('');
-    if (!passwordData.oldPassword) { setProfileError('Veuillez saisir votre ancien mot de passe'); return; }
-    if (!passwordData.newPassword) { setProfileError('Veuillez saisir votre nouveau mot de passe'); return; }
-    if (passwordData.newPassword.length < 8) { setProfileError('Le nouveau mot de passe doit contenir au moins 8 caractères'); return; }
-    if (passwordData.newPassword !== passwordData.confirmPassword) { setProfileError('Les mots de passe ne correspondent pas'); return; }
-
-    setProfileLoading(true);
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/change-password', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ oldPassword: passwordData.oldPassword, newPassword: passwordData.newPassword }),
-      });
-      const data = await response.json();
-      if (!data.success) throw new Error(data.message || "Erreur lors du changement de mot de passe");
-      setSuccess('Mot de passe changé avec succès !');
-      setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '', showOld: false, showNew: false, showConfirm: false });
-      setProfileLoading(false);
-    } catch (err) {
-      setProfileError(err.message || "Erreur lors du changement de mot de passe");
-      setProfileLoading(false);
-    }
-  };
-
-  if (!user) {
-    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#05060a', color: '#fff' }}><p>Chargement...</p></div>;
-  }
-
-  const profilePhotoSrc = editData.profilePhoto || user.profilePhoto || null;
-  const userInitial = (user.name || user.alias || 'U').charAt(0).toUpperCase();
-
   const formatDate = (date) => {
     if (!date) return '';
     return new Date(date).toLocaleDateString('fr-FR');
   };
+
+  if (!user) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#05060a', color: '#fff' }}>
+        <p>Chargement...</p>
+      </div>
+    );
+  }
+
+  const profilePhotoSrc = user.profilePhoto || null;
+  const userInitial = (user.name || user.alias || 'U').charAt(0).toUpperCase();
 
   return (
     <div className="app-root">
@@ -208,9 +107,11 @@ const Statistics = () => {
 
           <div
             className="sidebar-profile-section"
-            onClick={() => { setShowProfileModal(true); setActiveTab('info'); }}
+            onClick={() => navigate('/accueil')}
             role="button"
             tabIndex={0}
+            title="Cliquez pour gérer votre profil"
+            style={{ cursor: 'pointer' }}
           >
             {profilePhotoSrc ?
               <img src={profilePhotoSrc} alt="profile" className="sidebar-avatar" /> :
@@ -231,7 +132,8 @@ const Statistics = () => {
               e.stopPropagation(); 
               setShowDropdown(!showDropdown); 
             }}
-            role="button" tabIndex={0}
+            role="button" 
+            tabIndex={0}
             aria-expanded={showDropdown}
             aria-controls="profile-submenu"
           >
@@ -241,16 +143,24 @@ const Statistics = () => {
 
           {showDropdown && (
             <div className="dropdown-submenu" id="profile-submenu">
-              <button className="dropdown-submenu-item" onClick={() => { 
-                setShowProfileModal(true); 
-                setActiveTab('info'); 
-                setShowDropdown(false);
-              }}>Personal Information</button>
-              <button className="dropdown-submenu-item" onClick={() => { 
-                setShowProfileModal(true); 
-                setActiveTab('password'); 
-                setShowDropdown(false);
-              }}>Change Password</button>
+              <button 
+                className="dropdown-submenu-item" 
+                onClick={() => { 
+                  navigate('/accueil');
+                  setShowDropdown(false);
+                }}
+              >
+                Personal Information
+              </button>
+              <button 
+                className="dropdown-submenu-item" 
+                onClick={() => { 
+                  navigate('/accueil');
+                  setShowDropdown(false);
+                }}
+              >
+                Change Password
+              </button>
             </div>
           )}
         </nav>
@@ -335,136 +245,18 @@ const Statistics = () => {
         </main>
       </div>
 
-      {/* MODAL PROFIL */}
-      {showProfileModal && (
-        <div className="modal-overlay" onClick={() => setShowProfileModal(false)}>
-          <div className="modal-container modal-profile-improved" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">Profile Settings</h2>
-              <button className="modal-close" onClick={() => setShowProfileModal(false)}>✕</button>
-            </div>
-
-            <div className="modal-body modal-body-improved">
-              <div className="profile-nav-sidebar">
-                <button 
-                  className={`profile-nav-item ${activeTab === 'info' ? 'active' : ''}`} 
-                  onClick={() => { setActiveTab('info'); setProfileError(''); setSuccess(''); }}
-                >
-                  <span className="icon">👤</span> Personal Information
-                </button>
-                <button 
-                  className={`profile-nav-item ${activeTab === 'password' ? 'active' : ''}`} 
-                  onClick={() => { setActiveTab('password'); setProfileError(''); setSuccess(''); }}
-                >
-                  <span className="icon">🔒</span> Change Password
-                </button>
-              </div>
-
-              <div className="profile-content-area">
-                {activeTab === 'info' && (
-                  <div className="tab-content-info">
-                    <h3 className="content-title">Update Your Personal Details</h3>
-                    <p className="content-subtitle">Review and update your profile information. This will be visible to other users.</p>
-
-                    <div className="profile-photo-section">
-                      <div className="profile-photo-preview">
-                        {editData.profilePhoto ? <img src={editData.profilePhoto} alt="Preview" /> : userInitial}
-                      </div>
-                      <div className="photo-upload-wrapper">
-                        <label htmlFor="photo-upload" className="photo-upload-label">
-                          📷 Choose Photo
-                        </label>
-                        <input 
-                          id="photo-upload"
-                          type="file" 
-                          accept="image/*" 
-                          onChange={handlePhotoChange} 
-                          className="photo-upload-input" 
-                        />
-                        <span className="photo-upload-hint">JPG, PNG or GIF (Max 5MB)</span>
-                      </div>
-                    </div>
-
-                    <div className="form-grid-2">
-                      <div className="form-group">
-                        <label htmlFor="name" className="form-label">👤 Full Name</label>
-                        <input id="name" type="text" value={editData.name} onChange={handleInfoChange} className="form-input" />
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="alias" className="form-label">✨ Username</label>
-                        <input id="alias" type="text" value={editData.alias} onChange={handleInfoChange} className="form-input" />
-                      </div>
-                    </div>
-
-                    <div className="form-grid-2">
-                      <div className="form-group">
-                        <label htmlFor="email" className="form-label">📧 Email</label>
-                        <input id="email" type="email" value={editData.email} onChange={handleInfoChange} className="form-input" />
-                      </div>
-                      <div className="form-group">
-                        <label htmlFor="dateOfBirth" className="form-label">🎂 Date of Birth</label>
-                        <input id="dateOfBirth" type="date" value={editData.dateOfBirth} onChange={handleInfoChange} className="form-input" min="1965-01-01" max="2010-12-31" />
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="address" className="form-label">🏠 Address</label>
-                      <textarea id="address" value={editData.address} onChange={handleInfoChange} rows="3" className="form-input" />
-                    </div>
-
-                    {profileError && <div className="alert alert-error">{profileError}</div>}
-                    {success && <div className="alert alert-success">{success}</div>}
-
-                    <div className="form-actions">
-                      <button onClick={handleSaveInfo} disabled={profileLoading} className="btn btn-primary">{profileLoading ? '⏳ Saving...' : '✓ Save Changes'}</button>
-                      <button onClick={() => setShowProfileModal(false)} className="btn btn-secondary">Cancel</button>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'password' && (
-                  <div className="tab-content-password">
-                    <h3 className="content-title">Change Your Password</h3>
-                    <p className="content-subtitle">Use a strong password that you haven't used before.</p>
-
-                    <div className="form-group">
-                      <label htmlFor="oldPassword" className="form-label">Current Password</label>
-                      <div className="password-input-wrapper">
-                        <input id="oldPassword" type={passwordData.showOld ? 'text' : 'password'} value={passwordData.oldPassword} onChange={handlePasswordChange} className="form-input" />
-                        <button type="button" onClick={() => setPasswordData({ ...passwordData, showOld: !passwordData.showOld })} className="toggle-password">{passwordData.showOld ? '👁️' : '👁️‍🗨️'}</button>
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="newPassword" className="form-label">New Password</label>
-                      <div className="password-input-wrapper">
-                        <input id="newPassword" type={passwordData.showNew ? 'text' : 'password'} value={passwordData.newPassword} onChange={handlePasswordChange} className="form-input" />
-                        <button type="button" onClick={() => setPasswordData({ ...passwordData, showNew: !passwordData.showNew })} className="toggle-password">{passwordData.showNew ? '👁️' : '👁️‍🗨️'}</button>
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="confirmPassword" className="form-label">Confirm New Password</label>
-                      <div className="password-input-wrapper">
-                        <input id="confirmPassword" type={passwordData.showConfirm ? 'text' : 'password'} value={passwordData.confirmPassword} onChange={handlePasswordChange} className="form-input" />
-                        <button type="button" onClick={() => setPasswordData({ ...passwordData, showConfirm: !passwordData.showConfirm })} className="toggle-password">{passwordData.showConfirm ? '👁️' : '👁️‍🗨️'}</button>
-                      </div>
-                    </div>
-
-                    {profileError && <div className="alert alert-error">{profileError}</div>}
-                    {success && <div className="alert alert-success">{success}</div>}
-
-                    <div className="form-actions">
-                      <button onClick={handleChangePassword} disabled={profileLoading} className="btn btn-primary">{profileLoading ? '⏳ Updating...' : '✓ Update Password'}</button>
-                      <button onClick={() => setShowProfileModal(false)} className="btn btn-secondary">Cancel</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+      {/* SIDEBAR DROITE */}
+      <aside className="right-sidebar" aria-label="Future Content">
+        <div className="sidebar-panel">
+          <h3 className="sidebar-title">Vos performances</h3>
+          <p className="sidebar-text">Continuez à partager vos idées brillantes !</p>
+          <div className="future-content-placeholder">
+            <p> Statistiques détaillées</p>
+            <p> Classement</p>
+            <p> Objectifs</p>
           </div>
         </div>
-      )}
+      </aside>
     </div>
   );
 };

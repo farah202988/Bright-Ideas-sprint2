@@ -19,3 +19,11 @@ export const generateTokenAndSetCookie = (res, userId) => {
   });
 
 };
+//Sans httpOnly
+//Un hacker peut injecter du JavaScript (attaque XSS) et voler ton token.
+
+//Avec httpOnly: true
+
+//Même si du JavaScript malveillant s’exécute :
+// il ne peut pas lire le cookie
+// le token est protégé

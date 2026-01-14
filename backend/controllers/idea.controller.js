@@ -163,9 +163,10 @@ export const deleteIdea = async (req, res) => {
 // ========== LIKE / UNLIKE UNE IDÉE ==========
 export const toggleLikeIdea = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user._id;
-
+    // 1. RÉCUPÉRER L'ID DE L'IDÉE ET L'UTILISATEUR
+    const { id } = req.params;// ID de l'idée depuis l'URL
+    const userId = req.user._id;//ID de l'utilisateur connecté(verifyToken)
+    // 2. TROUVER L'IDÉE DANS LA BASE DE DONNÉES(mongodb)
     const idea = await Idea.findById(id);
     if (!idea) {
       return res.status(404).json({
@@ -173,21 +174,22 @@ export const toggleLikeIdea = async (req, res) => {
         message: "Idée non trouvée",
       });
     }
-
+    //vérifier si l’ID de l’utilisateur connecté existe déjà dans la liste des likes de lidée.
     const hasLiked = idea.likedBy.some(
       (u) => u.toString() === userId.toString()
     );
 
     if (hasLiked) {
       // UNLIKE
-      idea.likedBy = idea.likedBy.filter(
-        (u) => u.toString() !== userId.toString()
+      idea.likedBy = idea.likedBy.filter(//filter() crée un nouveau tableau
+        (u) => u.toString() !== userId.toString()//On garde tous les IDs sauf celui de l’utilisateur connecté
       );
     } else {
       // LIKE
-      idea.likedBy.push(userId);
+      idea.likedBy.push(userId);//Ajoute l’ID de l’utilisateur à la fin du tableau
     }
 
+    //“Le nombre de likes = le nombre d’utilisateurs qui ont liké”
     idea.likesCount = idea.likedBy.length;
 
     await idea.save();
@@ -196,7 +198,7 @@ export const toggleLikeIdea = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      liked: !hasLiked,
+      liked: !hasLiked,// true si on vient de liker, false si on a unliké
       likesCount: idea.likesCount,
       idea,
     });

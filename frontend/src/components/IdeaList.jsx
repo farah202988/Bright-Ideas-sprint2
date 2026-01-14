@@ -10,8 +10,8 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
   const [success, setSuccess] = useState('');
 
   // États pour la modification
-  const [editingIdea, setEditingIdea] = useState(null);
-  const [editText, setEditText] = useState('');
+  const [editingIdea, setEditingIdea] = useState(null);//Stocke l'idée en cours d'édition
+  const [editText, setEditText] = useState('');//Stocke le texte modifié
 
   // État pour la fenêtre listant les likes
   const [likesIdea, setLikesIdea] = useState(null);
@@ -22,6 +22,8 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
   // État pour la confirmation de suppression
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
+  
+///////////////////////////////////////////////////////////////
   // Fonction pour récupérer les idées - AVEC useCallback
   const fetchIdeas = useCallback(async () => {
     try {
@@ -34,12 +36,14 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
 
       if (data.success) {
         let loadedIdeas = data.ideas;
-
-        if (filterByAuthorId) {
+        //Si un auteur est sélectionné, on garde uniquement les idées écrites par cet auteur.
+        if (filterByAuthorId) {//contient l’ID d’un auteur
           loadedIdeas = loadedIdeas.filter(
             (idea) => idea.author?._id === filterByAuthorId
           );
         }
+          // 🔥 TRI PAR NOMBRE DE LIKES (du + liké au - liké)
+        loadedIdeas.sort((a, b) => b.likesCount - a.likesCount);
 
         setIdeas(loadedIdeas);
       } else {
@@ -82,7 +86,7 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
       const data = await response.json();
 
       if (data.success) {
-        setIdeas((prev) => prev.filter((idea) => idea._id !== ideaId));
+        setIdeas((prev) => prev.filter((idea) => idea._id !== ideaId));//Met à jour la liste en retirant l'idée supprimée
         setSuccess('✓ Idée supprimée avec succès');
         setDeleteConfirm(null);
         setOpenMenuId(null);
@@ -101,9 +105,9 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
 
   // Ouvrir le modal d'édition
   const openEditModal = (idea) => {
-    setEditingIdea(idea);
-    setEditText(idea.text || '');
-    setOpenMenuId(null);
+    setEditingIdea(idea);//Stocke l'idée entière
+    setEditText(idea.text || '');//Pré-remplit le textarea avec le texte actuel
+    setOpenMenuId(null);// Ferme le menu 3 points
   };
 
   const closeEditModal = () => {
@@ -113,9 +117,9 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
 
   // Enregistrer la modification
   const handleSaveEdit = async () => {
-    if (!editingIdea) return;
+    if (!editingIdea) return;//editingIdea doit être défini
 
-    const newText = editText.trim();
+    const newText = editText.trim();//Supprime les espaces inutiles au début et à la fin du texte 
     if (newText.length < 10) {
       setError('Le texte doit contenir au moins 10 caractères');
       setTimeout(() => setError(''), 3000);
@@ -132,8 +136,8 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
 
       const data = await response.json();
       if (data.success) {
-        setIdeas((prev) =>
-          prev.map((i) => (i._id === editingIdea._id ? data.idea : i))
+        setIdeas((prev) =>//prev contient la liste actuelle des idées prev=[ { _id: 1, text: "Idée A" },{ _id: 2, text: "Idée B" },{ _id: 3, text: "Idée C" }];
+          prev.map((i) => (i._id === editingIdea._id ? data.idea : i))//Remplace l'idée dans la liste par celle mise à jour
         );
         setSuccess('✓ Idée modifiée avec succès');
         closeEditModal();
@@ -235,7 +239,9 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
 
       <div className="ideas-container">
         {ideas.map((idea) => {
+          // Vérifier si l'utilisateur connecté est l'auteur de l'idée
           const isAuthor = currentUser?._id === idea.author?._id;
+          // Vérifier si l'utilisateur a liké cette idée (9baal)
           const hasLiked = idea.likedBy?.some((u) => u._id === currentUser?._id);
           const authorName = idea.author?.alias || idea.author?.name || 'Utilisateur';
           const authorPhoto = idea.author?.profilePhoto;
@@ -261,20 +267,23 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
                 </div>
 
                 {/* Menu 3 points (seulement pour l'auteur) */}
+                {/*Le menu apparaît seulement si isAuthor est vrai (l'utilisateur connecté est l'auteur de l'idée)*/}
                 {isAuthor && (
                   <div className="idea-menu-container">
                     <button
                       className="idea-menu-btn"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setOpenMenuId(openMenuId === idea._id ? null : idea._id);
+                        setOpenMenuId(openMenuId === idea._id  //// Conditionnelle pour basculer l'ouverture/fermeture du menu
+                          ? null // Si le menu est déjà ouvert, le fermer
+                          : idea._id);//  Sinon, ouvrir le menu pour cette idée
                       }}
                       title="Options"
                     >
                       ⋮
                     </button>
-
-                    {openMenuId === idea._id && (
+                      {/* Menu déroulant */}
+                    {openMenuId === idea._id && (// Si le menu est ouvert pour cette idée
                       <div className="idea-dropdown-menu">
                         <button
                           className="dropdown-item edit-item"
@@ -323,13 +332,14 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
                   className="idea-likes-count"
                   onClick={() => {
                     if (idea.likedBy && idea.likedBy.length > 0) {
-                      setLikesIdea(idea);
+                      setLikesIdea(idea);//// ✅ Ouvre la modal
                     }
                   }}
-                  style={{ cursor: idea.likedBy?.length > 0 ? 'pointer' : 'default' }}
+                  style={{ cursor: idea.likedBy?.length > 0 ? 'pointer' : 'default' }}// // 👆 Main avec doigt pointé (cliquable) sinon cursor: 'default'  // ➡️ Flèche normale (pas cliquable)
                 >
-                  {idea.likesCount || 0} likes
+                  {idea.likesCount || 0} likes 
                 </span>
+                
               </div>
             </div>
           );
@@ -338,7 +348,7 @@ const IdeaList = ({ currentUser, filterByAuthorId }) => {
 
       {/* Modal édition idée */}
       <EditIdeaModal
-        isOpen={!!editingIdea}
+        isOpen={!!editingIdea}//Le double !! transforme une valeur en boolean exemple: null devient false, un objet devient true
         text={editText}
         onChangeText={setEditText}
         onCancel={closeEditModal}

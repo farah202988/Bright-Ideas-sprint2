@@ -13,11 +13,11 @@ const AdminDashboard = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState('statistics'); // CHANGÉ: 'dashboard' → 'statistics'
+  const [activeSection, setActiveSection] = useState('statistics');
   const [stats, setStats] = useState(null);
   const [statsError, setStatsError] = useState('');
   const navigate = useNavigate();
-
+  // Données d'édition de profil
   const [editData, setEditData] = useState({
     name: '',
     alias: '',
@@ -26,7 +26,7 @@ const AdminDashboard = () => {
     address: '',
     profilePhoto: null,
   });
-
+  // Données de changement de mot de passe
   const [passwordData, setPasswordData] = useState({
     oldPassword: '',
     newPassword: '',
@@ -58,7 +58,7 @@ const AdminDashboard = () => {
       address: userData.address || '',
       profilePhoto: userData.profilePhoto || null,
     });
-  }, [navigate]);
+  }, [navigate]);//[] indique que cet effet ne s'exécute qu'une fois au montage du composant 
 
   // Charger les statistiques admin
   useEffect(() => {
@@ -82,7 +82,7 @@ const AdminDashboard = () => {
 
     fetchStats();
   }, []);
-
+  //logout function
   const handleLogout = () => {
     localStorage.removeItem('user');
     navigate('/signin');
@@ -203,11 +203,11 @@ const AdminDashboard = () => {
             onClick={() => setActiveSection('statistics')}
             className={`nav-item ${activeSection === 'statistics' ? 'active' : ''}`}
           >
-            📊 Statistiques
+             Statistiques
           </a>
           <a 
             href="#users" 
-            onClick={() => setActiveSection('users')}
+            onClick={() => setActiveSection('users')}//
             className={`nav-item ${activeSection === 'users' ? 'active' : ''}`}
           >
              Gestion Utilisateurs

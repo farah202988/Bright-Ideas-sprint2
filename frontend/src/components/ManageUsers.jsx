@@ -23,7 +23,9 @@ const ManageUsers = () => {
   // Charger tous les utilisateurs au montage
   useEffect(() => {//Dès que la page Admin s’ouvre, on charge automatiquement la liste des utilisateurs.
     fetchUsers();
-  }, []);
+  }, []);//fetchUsers est appelé une seule fois au montage du composant
+
+  // Fonction pour récupérer les utilisateurs
 
   const fetchUsers = async () => {
     setLoading(true);

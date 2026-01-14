@@ -51,13 +51,13 @@ export const checkAdminRole = async (req, res, next) => {
  */
 export const logAdminAction = (req, res, next) => {
   try {
-    const action = `${req.method} ${req.originalUrl}`;
-    const adminId = req.user?._id;
-    const timestamp = new Date().toISOString();
+    const action = `${req.method} ${req.originalUrl}`;//Méthode HTTP + URL 
+    const adminId = req.user?._id;//Récupère l'ID de l'admin à partir de req.user
+    const timestamp = new Date().toISOString();//Horodatage de l'action
 
     console.log(`[ADMIN ACTION] ${timestamp} - Admin: ${adminId} - Action: ${action}`);
 
-    // Vous pouvez aussi sauvegarder les logs dans une base de données
+    // dans le futur nous pouvons aussi sauvegarder les logs dans une base de données
     // await AdminLog.create({ adminId, action, timestamp });
 
     next();

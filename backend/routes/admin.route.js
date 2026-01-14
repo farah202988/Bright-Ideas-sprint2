@@ -1,12 +1,6 @@
 import express from "express";
 import {
   getDashboardStats,
-  verifyUserEmail,
-  changeUserRole,
-  getUserActivityLog,
-  getUsersWithFilters,
-  exportUsersData,
-  bulkDeleteUsers,
   getAllIdeasAdmin,
   deleteIdeaAdmin,
 } from "../controllers/admin.controller.js";
@@ -21,26 +15,11 @@ const router = express.Router();
 // Dashboard Statistics
 router.get("/dashboard-stats", verifyToken, checkAdminRole, logAdminAction, getDashboardStats);
 
-// Users Activity Log
-router.get("/activity-log", verifyToken, checkAdminRole, logAdminAction, getUserActivityLog);
-
-// Get Users with Filters (search, role filter, pagination, sorting)
-router.get("/users-filtered", verifyToken, checkAdminRole, logAdminAction, getUsersWithFilters);
-
-// Verify User Email
-router.put("/verify-user/:id", verifyToken, checkAdminRole, logAdminAction, verifyUserEmail);
-
-// Change User Role
-router.put("/change-role/:id", verifyToken, checkAdminRole, logAdminAction, validateAdminInput, changeUserRole);
-
-// Export Users Data (CSV)
-router.get("/export-users", verifyToken, checkAdminRole, logAdminAction, exportUsersData);
-
-// Bulk Delete Users
-router.delete("/bulk-delete", verifyToken, checkAdminRole, logAdminAction, validateAdminInput, bulkDeleteUsers);
 
 // Ideas moderation
 router.get("/ideas", verifyToken, checkAdminRole, logAdminAction, getAllIdeasAdmin);
 router.delete("/ideas/:id", verifyToken, checkAdminRole, logAdminAction, deleteIdeaAdmin);
+
+
 
 export default router;

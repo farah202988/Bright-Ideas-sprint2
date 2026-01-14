@@ -8,30 +8,31 @@ const PostIdea = ({ user }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
+// Récupère la première lettre du nom de l'utilisateur (name ou alias),
+// si aucun n'existe on utilise 'U', puis on la met enA majuscule
+//user?.name:Donne-moi name seulement si user existe
   const userInitial = (user?.name || user?.alias || 'U').charAt(0).toUpperCase();
+// Récupère la photo de profil de l'utilisateur,
+// s'il n'y en a pas, on met null
   const profilePhotoSrc = user?.profilePhoto || null;
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image must not exceed 5MB');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setIdeaImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const file = e.target.files[0];//// Récupère le premier fichier sélectionné depuis l'input type="file"
+  if (!file) return;//// Si aucun fichier n'est sélectionné, on arrête la fonction
 
+  const reader = new FileReader();// Crée un objet FileReader pour lire le fichier image
+  reader.onload = () => setIdeaImage(reader.result);// Quand l’image est complètement lue, on la met dans l’état React ideaImage.
+  // Lorsque le fichier est entièrement lu,
+  // on sauvegarde l'image en Base64 dans l'état React
+  reader.readAsDataURL(file);// Démarre la lecture et transforme l'image en Base64
+};
+
+//Cette fonction supprime l’image sélectionnée en réinitialisant l’état ideaImage.
   const handleRemoveImage = () => {
     setIdeaImage(null);
   };
 
-// Dans PostIdea.jsx, remplacez la fonction handleSubmit par celle-ci:
+
 
 const handleSubmit = async () => {
   // 1. Réinitialiser les messages
@@ -74,7 +75,7 @@ const handleSubmit = async () => {
     }
 
     // 8. Afficher le message de succès
-    setSuccess('Idée publiée avec succès! 🎉');
+    setSuccess('Idée publiée avec succès! ');
     
     // 9. Vider le formulaire
     setIdeaText('');

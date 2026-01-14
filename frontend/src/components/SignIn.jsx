@@ -4,14 +4,14 @@ import { loginUser } from "../api/api";
 
 const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ email: "", password: "" });//****** */
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    setFormData({ ...formData, [e.target.id]: e.target.value });///***** */
   };
 
   const handleSubmit = async (e) => {
@@ -19,15 +19,24 @@ const SignIn = () => {
     setError(null);
     setSuccess(null);
     setLoading(true);
-
+      // Appeler la fonction loginUser (dans api/api.js)
+      // Elle envoie email + password au serveur
     try {
       const data = await loginUser({
         email: formData.email,
         password: formData.password
       });
-
+      // ✅ C'EST ICI QUE LES DONNÉES SONT SAUVEGARDÉES!
       localStorage.setItem("user", JSON.stringify(data.user));
-
+      /**
+       * localStorage maintenant contient:
+       * {
+       *   "user": '{"_id":"507f1f77bcf86cd799439011","name":"Jean Dupont",...}'
+       * }
+       * 
+       * Plus tard, on récupère avec:
+       * const user = JSON.parse(localStorage.getItem("user"));
+       */
       if (data.user.role === 'admin') {
         setSuccess("Connexion réussie ! Redirection vers le Dashboard Admin...");
         console.log("🔐 Redirection vers Admin Dashboard");

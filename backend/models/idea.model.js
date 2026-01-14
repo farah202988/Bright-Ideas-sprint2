@@ -39,11 +39,8 @@ const ideaSchema = new mongoose.Schema(
       default: 0,
     },
 
-    // Nombre de commentaires
-    commentsCount: {
-      type: Number,
-      default: 0,
-    },
+
+
   },
   {
     timestamps: true, // Ajoute automatiquement createdAt et updatedAt

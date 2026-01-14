@@ -73,8 +73,12 @@ export const signup = async (req, res) => {
       address,
       password: hashedPassword
     });
+    // À ce stade, user._id existe déjà (généré par Mongoose)
+    // mais il n'est pas encore dans MongoDB
 
-    await user.save();//////////////////////////////
+    await user.save();//////////////////////////////    // Cette ligne envoie le document à MongoDB
+    // MongoDB confirme l'enregistrement et l'_id devient définitif
+    //// À ce moment, Mongoose génère **AUTOMATIQUEMENT** un _id pour le nouvel utilisateur.
 
     // Générer JWT et cookie
     generateTokenAndSetCookie(res, user._id);
@@ -171,9 +175,6 @@ export const logout = (req, res) => {
 // UPDATE PROFILE
 export const updateProfile = async (req, res) => {
   try {
-    console.log('req.body:', req.body);
-    console.log('req.user:', req.user);
-
     const userId = req.user._id;
     const { name, alias, email, dateOfBirth, address, profilePhoto } = req.body;
 
@@ -191,8 +192,10 @@ export const updateProfile = async (req, res) => {
         message: "Format d'email invalide"
       });
     }
-
-    const emailExists = await User.findOne({ email, _id: { $ne: userId } });
+    //Vérifier que l'email n'est pas déjà utilisé par un AUTRE utilisateur
+    const emailExists = await User.findOne({ 
+      email,//chercher un utilisateur avec cet email
+       _id: { $ne: userId } });//ne: not equal: l'id doit être différent de userId
     if (emailExists) {
       return res.status(400).json({
         success: false,
@@ -200,7 +203,7 @@ export const updateProfile = async (req, res) => {
       });
     }
 
-    const aliasExists = await User.findOne({ alias, _id: { $ne: userId } });
+    const aliasExists = await User.findOne({ alias, _id: { $ne: userId } });//ne: not equal
     if (aliasExists) {
       return res.status(400).json({
         success: false,
@@ -214,11 +217,11 @@ export const updateProfile = async (req, res) => {
     if (profilePhoto && typeof profilePhoto === 'string' && profilePhoto.startsWith('data:')) {
       updateData.profilePhoto = profilePhoto;
     }
-
+    //Mettre à jour l'utilisateur dans la base de données
     const user = await User.findByIdAndUpdate(
-      userId,
-      updateData,
-      { new: true, runValidators: true }
+      userId,//id de l'utilisateur à mettre à jour
+      updateData,//les nouvelles données
+      { new: true, runValidators: true }//options: new:true pour retourner le document mis à jour; runValidators:true pour appliquer les validations du schéma
     );
 
     res.status(200).json({
@@ -269,7 +272,7 @@ export const changePassword = async (req, res) => {
       });
     }
 
-    const isOldPasswordValid = await bcryptjs.compare(oldPassword, user.password);
+    const isOldPasswordValid = await bcryptjs.compare(oldPassword, user.password);//comparer l'ancien mot de passe avec le mot de passe haché dans la base de données
     if (!isOldPasswordValid) {
       return res.status(401).json({
         success: false,
@@ -277,9 +280,9 @@ export const changePassword = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcryptjs.hash(newPassword, 10);
-    user.password = hashedPassword;
-    await user.save();
+    const hashedPassword = await bcryptjs.hash(newPassword, 10);//hachage du nouveau mot de passe 10=nombre de salage
+    user.password = hashedPassword;//mettre à jour le mot de passe
+    await user.save();//sauvegarder l'utilisateur
 
     res.status(200).json({
       success: true,

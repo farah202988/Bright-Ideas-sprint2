@@ -39,7 +39,7 @@ const MyIdeas = () => {
       return;
     }
 
-    const userData = JSON.parse(storedUser);
+    const userData = JSON.parse(storedUser);//JSON.parse(storedUser) transforme le texte stocké dans le localStorage en objet JavaScript utilisable dans ton code.
     if (userData.role === 'admin') {
       navigate('/admin');
       return;
@@ -225,6 +225,7 @@ const MyIdeas = () => {
 
         <main className="main-content">
           <section className="panel card-panel">
+            {/* Affichage de la liste des idées de l'utilisateur */}
             <IdeaList
               currentUser={user}
               filterByAuthorId={user._id}
